@@ -2,6 +2,6 @@ entityqueue_form_widget.content:
   path: '/entityqueue_form_widget'
   defaults:
     _controller: 'Drupal\entityqueue_form_widget\Controller\EntityQueueFormWidgetController::content'
-    _title: 'My First Page'
+    _title: 'Module Home Page'
   requirements:
-    _permission: 'access content'
+    _permission: 'administer entityqueue+manipulate entityqueues+manipulate all entityqueues'

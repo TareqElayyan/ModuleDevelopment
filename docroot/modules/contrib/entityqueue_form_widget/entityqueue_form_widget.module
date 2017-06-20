@@ -7,3 +7,38 @@
  *
  *
  */
+
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Url;
+
+function entityqueue_form_widget_form_node_form_alter(&$form, FormStateInterface $form_state) {
+
+  $node = $form_state->getFormObject()->getEntity();
+  $node_type = $node->getType();
+
+  //$config = \Drupal::config('entityqueue_form_widget.settings');
+  //$types = $config->get('allowed_types', array());
+
+  //if(in_array($node_type, $types))
+  //{
+  $url = Url::fromRoute('entity.entity_queue.collection');
+  $internal_link = \Drupal::l(t('Entityqueue management page'), $url);
+    $form['entityqueue_form_widget'] = array(
+      '#type' => 'details',
+      '#title' => t('ENTITYQUEUES'),
+      '#access' => \Drupal::currentUser()->hasPermission('administer entityqueue+manipulate entityqueues+manipulate all entityqueues'),
+      '#group' => 'advanced',
+      '#tree' => TRUE,
+      '#weight' => 10,
+      '#markup' => '<p>' . t('Select the form available entityqueue below to push this content to. To reorder and manage each queue, please visit the ').$internal_link.'</p>',
+    );
+
+  $form['entityqueue_form_widget']['entityqueues'] = [
+    '#type' => 'checkbox',
+    '#title' => t('Provide a menu link'),
+    '#default_value' => '0',
+  ];
+  //}
+
+}
+
