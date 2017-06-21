@@ -1,44 +1,47 @@
 <?php
 
 /**
- *
- *
- *
- *
- *
+ * @file
+ * Allows editors to add content to an entityqueue from the same add/edit form while they are editing
  */
 
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
+use Drupal\entityqueue\Controller\EntityQueueUIController;
 
 function entityqueue_form_widget_form_node_form_alter(&$form, FormStateInterface $form_state) {
 
   $node = $form_state->getFormObject()->getEntity();
-  $node_type = $node->getType();
+  $entity_queue_obj = new EntityQueueUIController();
+  $node_entityqueue_build = $entity_queue_obj->entityGetAllowedSubqueList($node);
+  $allowed_entityqueues = array_keys($node_entityqueue_build['table']['#rows']);
 
-  //$config = \Drupal::config('entityqueue_form_widget.settings');
-  //$types = $config->get('allowed_types', array());
-
-  //if(in_array($node_type, $types))
-  //{
   $url = Url::fromRoute('entity.entity_queue.collection');
   $internal_link = \Drupal::l(t('Entityqueue management page'), $url);
-    $form['entityqueue_form_widget'] = array(
-      '#type' => 'details',
-      '#title' => t('ENTITYQUEUES'),
-      '#access' => \Drupal::currentUser()->hasPermission('administer entityqueue+manipulate entityqueues+manipulate all entityqueues'),
-      '#group' => 'advanced',
-      '#tree' => TRUE,
-      '#weight' => 10,
-      '#markup' => '<p>' . t('Select the form available entityqueue below to push this content to. To reorder and manage each queue, please visit the ').$internal_link.'</p>',
-    );
-
-  $form['entityqueue_form_widget']['entityqueues'] = [
-    '#type' => 'checkbox',
-    '#title' => t('Provide a menu link'),
-    '#default_value' => '0',
+  $form['entityqueue_form_widget'] = [
+    '#type' => 'details',
+    '#title' => t('ENTITYQUEUES'),
+    '#access' => \Drupal::currentUser()
+      ->hasPermission('administer entityqueue+manipulate entityqueues+manipulate all entityqueues'),
+    '#group' => 'advanced',
+    '#tree' => TRUE,
+    '#weight' => 10,
+    '#markup' => '<p>' . t('Select the form available entityqueue below to push this content to. To reorder and manage each queue, please visit the ') . $internal_link . '</p>',
   ];
-  //}
 
-}
+  $form['entityqueue_form_widget']['entityqueues'] = [];
+  foreach ($allowed_entityqueues as $allowed_entityqueue) {
+    $entity_subqueue = \Drupal::entityManager()
+      ->getStorage('entity_subqueue')
+      ->load($allowed_entityqueue);
+    $number_of_items = count($entity_subqueue->get('items')->getValue());
+    $checkbox_item = [
+      '#type' => 'checkbox',
+      '#id' => $allowed_entityqueue,
+      '#title' => t($node_entityqueue_build['table']['#rows'][$allowed_entityqueue]['data']['label'] . '<i>' . ' (' . $number_of_items . ' items)' . '</i>'),
+      '#default_value' => '0',
+    ];
+    array_push($form['entityqueue_form_widget']['entityqueues'], $checkbox_item);
+  }
+} // End of entityqueue_form_widget_form_node_form_alter
 
