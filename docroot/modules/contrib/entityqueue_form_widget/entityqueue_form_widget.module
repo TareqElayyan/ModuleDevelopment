@@ -41,7 +41,16 @@ function entityqueue_form_widget_form_node_form_alter(&$form, FormStateInterface
       '#title' => t($node_entityqueue_build['table']['#rows'][$allowed_entityqueue]['data']['label'] . '<i>' . ' (' . $number_of_items . ' items)' . '</i>'),
       '#default_value' => '0',
     ];
+    /* To Do: add entityqueueu maximum number to the #title */
     array_push($form['entityqueue_form_widget']['entityqueues'], $checkbox_item);
   }
 } // End of entityqueue_form_widget_form_node_form_alter
+
+function entityqueue_form_widget_form_node_form_submit($form, FormStateInterface $form_state) {
+  echo "INNNN"; die();
+  $node = $form_state->getFormObject()->getEntity();
+  if (!$form_state->isValueEmpty('entityqueue_form_widget')) {
+   echo "INNNN"; die();
+  }
+}
 
