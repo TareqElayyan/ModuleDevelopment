@@ -8,6 +8,7 @@
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
 use Drupal\entityqueue\Controller\EntityQueueUIController;
+use Drupal\entityqueue\Entity\EntitySubqueue;
 
 function entityqueue_form_widget_form_node_form_alter(&$form, FormStateInterface $form_state) {
 
@@ -25,7 +26,7 @@ function entityqueue_form_widget_form_node_form_alter(&$form, FormStateInterface
       ->hasPermission('administer entityqueue+manipulate entityqueues+manipulate all entityqueues'),
     '#group' => 'advanced',
     '#tree' => TRUE,
-    '#weight' => 10,
+    '#weight' => 100,
     '#markup' => '<p>' . t('Select the form available entityqueue below to push this content to. To reorder and manage each queue, please visit the ') . $internal_link . '</p>',
   ];
 
@@ -37,20 +38,60 @@ function entityqueue_form_widget_form_node_form_alter(&$form, FormStateInterface
     $number_of_items = count($entity_subqueue->get('items')->getValue());
     $checkbox_item = [
       '#type' => 'checkbox',
-      '#id' => $allowed_entityqueue,
       '#title' => t($node_entityqueue_build['table']['#rows'][$allowed_entityqueue]['data']['label'] . '<i>' . ' (' . $number_of_items . ' items)' . '</i>'),
-      '#default_value' => '0',
+      '#default_value' => $allowed_entityqueue,
+      '#id' => $allowed_entityqueue,
     ];
+
+    $form['entityqueue_form_widget']['entityqueues'][$allowed_entityqueue] = $checkbox_item;
     /* To Do: add entityqueueu maximum number to the #title */
-    array_push($form['entityqueue_form_widget']['entityqueues'], $checkbox_item);
+   //array_push($form['entityqueue_form_widget']['entityqueues'], $checkbox_item);
+  }
+
+  foreach (array_keys($form['actions']) as $action) {
+    if ($action != 'preview' && isset($form['actions'][$action]['#type']) && $form['actions'][$action]['#type'] === 'submit') {
+      $form['actions'][$action]['#submit'][] = 'entityqueue_form_widget_form_node_form_submit';
+    }
   }
 } // End of entityqueue_form_widget_form_node_form_alter
 
 function entityqueue_form_widget_form_node_form_submit($form, FormStateInterface $form_state) {
-  echo "INNNN"; die();
   $node = $form_state->getFormObject()->getEntity();
+  $entity_id = $node->id();
   if (!$form_state->isValueEmpty('entityqueue_form_widget')) {
-   echo "INNNN"; die();
+    $values = $form_state->getValue('entityqueue_form_widget');
+    $eqs_machine_names = array_keys($values['entityqueues'], "1");
+
+    foreach ($eqs_machine_names as $eqs_machine_name)
+    {
+
+      $query = \Drupal::entityQuery('entity_subqueue')->condition('queue', $eqs_machine_name);
+      $result = $query->execute();
+      $subqueues = EntitySubqueue::loadMultiple($result);
+      /* Need more work - NOT WORKING*/
+      foreach ($subqueues as $subqueue) {
+        $items = $subqueue->get('items')->getValue();
+        if (($item_key = array_search($entity_id, array_column($items, 'target_id'))) !== FALSE) {
+          unset($items[$item_key]);
+          $subqueue->set('items', $items);
+          $subqueue->save();
+        }
+      }
+
+      /*echo '<pre>';
+      print_r($subqueues);
+      echo '</pre>';*/
+
+      /*//$entity_subqueue =
+      $entity_subqueue = new \Drupal\entityqueue\Entity\EntityQueue();
+      $entity = \Drupal::entityTypeManager()->getStorage($entity_subqueue->getQueue()->getTargetEntityTypeId())->load($entity_id);
+      echo '<pre>';
+      print_r($entity);
+      echo '</pre>';
+      // Perform the operation.
+      //$entity_subqueue->addItem($entity_id)->save();*/
+    }
   }
 }
+
 
