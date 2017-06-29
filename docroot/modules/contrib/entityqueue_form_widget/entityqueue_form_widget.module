@@ -13,6 +13,13 @@ use Drupal\entityqueue\Entity\EntitySubqueue;
 function entityqueue_form_widget_form_node_form_alter(&$form, FormStateInterface $form_state) {
 
   $node = $form_state->getFormObject()->getEntity();
+  $entity_id = $node->id();
+
+  /* Get all checked queues for this entity */
+  $query_checked_queues = db_select('entity_subqueue__items')->distinct()->condition('items_target_id', $entity_id);
+  $query_checked_queues->addField('entity_subqueue__items','entity_id');
+  $result_checked_queues = array_keys($query_checked_queues->execute()->fetchAllAssoc('entity_id'));
+
   $entity_queue_obj = new EntityQueueUIController();
   $node_entityqueue_build = $entity_queue_obj->entityGetAllowedSubqueList($node);
   $allowed_entityqueues = array_keys($node_entityqueue_build['table']['#rows']);
@@ -36,10 +43,16 @@ function entityqueue_form_widget_form_node_form_alter(&$form, FormStateInterface
       ->getStorage('entity_subqueue')
       ->load($allowed_entityqueue);
     $number_of_items = count($entity_subqueue->get('items')->getValue());
+
+    $checked_flag = 0;
+    if (in_array($allowed_entityqueue, $result_checked_queues)) {
+      $checked_flag = 1;
+    }
+
     $checkbox_item = [
       '#type' => 'checkbox',
       '#title' => t($node_entityqueue_build['table']['#rows'][$allowed_entityqueue]['data']['label'] . '<i>' . ' (' . $number_of_items . ' items)' . '</i>'),
-      '#default_value' => $allowed_entityqueue,
+      '#default_value' => $checked_flag,
       '#id' => $allowed_entityqueue,
     ];
 
