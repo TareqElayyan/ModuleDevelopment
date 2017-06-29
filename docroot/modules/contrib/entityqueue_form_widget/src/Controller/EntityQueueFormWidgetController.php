@@ -13,7 +13,7 @@ class EntityQueueFormWidgetController extends ControllerBase {
   public function content() {
     return array(
       '#type' => 'markup',
-      '#markup' => t('Menu link Custom Page'),
+      '#markup' => t('Entity Queue Form Widget Custom Page'),
     );
   }
 
